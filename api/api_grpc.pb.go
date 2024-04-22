@@ -2974,3 +2974,123 @@ var Api_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "api.proto",
 }
+
+// SBClient is the client API for SB service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type SBClient interface {
+	PostSubmitV12(ctx context.Context, opts ...grpc.CallOption) (SB_PostSubmitV12Client, error)
+}
+
+type sBClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSBClient(cc grpc.ClientConnInterface) SBClient {
+	return &sBClient{cc}
+}
+
+func (c *sBClient) PostSubmitV12(ctx context.Context, opts ...grpc.CallOption) (SB_PostSubmitV12Client, error) {
+	stream, err := c.cc.NewStream(ctx, &SB_ServiceDesc.Streams[0], "/api.SB/PostSubmitV12", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &sBPostSubmitV12Client{stream}
+	return x, nil
+}
+
+type SB_PostSubmitV12Client interface {
+	Send(*PostSubmitRequest) error
+	CloseAndRecv() (*PostSubmitResponse, error)
+	grpc.ClientStream
+}
+
+type sBPostSubmitV12Client struct {
+	grpc.ClientStream
+}
+
+func (x *sBPostSubmitV12Client) Send(m *PostSubmitRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *sBPostSubmitV12Client) CloseAndRecv() (*PostSubmitResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(PostSubmitResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// SBServer is the server API for SB service.
+// All implementations must embed UnimplementedSBServer
+// for forward compatibility
+type SBServer interface {
+	PostSubmitV12(SB_PostSubmitV12Server) error
+	mustEmbedUnimplementedSBServer()
+}
+
+// UnimplementedSBServer must be embedded to have forward compatible implementations.
+type UnimplementedSBServer struct {
+}
+
+func (UnimplementedSBServer) PostSubmitV12(SB_PostSubmitV12Server) error {
+	return status.Errorf(codes.Unimplemented, "method PostSubmitV12 not implemented")
+}
+func (UnimplementedSBServer) mustEmbedUnimplementedSBServer() {}
+
+// UnsafeSBServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SBServer will
+// result in compilation errors.
+type UnsafeSBServer interface {
+	mustEmbedUnimplementedSBServer()
+}
+
+func RegisterSBServer(s grpc.ServiceRegistrar, srv SBServer) {
+	s.RegisterService(&SB_ServiceDesc, srv)
+}
+
+func _SB_PostSubmitV12_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SBServer).PostSubmitV12(&sBPostSubmitV12Server{stream})
+}
+
+type SB_PostSubmitV12Server interface {
+	SendAndClose(*PostSubmitResponse) error
+	Recv() (*PostSubmitRequest, error)
+	grpc.ServerStream
+}
+
+type sBPostSubmitV12Server struct {
+	grpc.ServerStream
+}
+
+func (x *sBPostSubmitV12Server) SendAndClose(m *PostSubmitResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *sBPostSubmitV12Server) Recv() (*PostSubmitRequest, error) {
+	m := new(PostSubmitRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// SB_ServiceDesc is the grpc.ServiceDesc for SB service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var SB_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.SB",
+	HandlerType: (*SBServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "PostSubmitV12",
+			Handler:       _SB_PostSubmitV12_Handler,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "api.proto",
+}

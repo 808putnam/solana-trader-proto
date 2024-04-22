@@ -7,10 +7,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
+    AsyncIterable,
     AsyncIterator,
     Dict,
+    Iterable,
     List,
     Optional,
+    Union,
 )
 
 import betterproto
@@ -2664,7 +2667,30 @@ class ApiStub(betterproto.ServiceStub):
             yield response
 
 
+class SbStub(betterproto.ServiceStub):
+    async def post_submit_v12(
+        self,
+        post_submit_request_iterator: Union[
+            AsyncIterable["PostSubmitRequest"], Iterable["PostSubmitRequest"]
+        ],
+        *,
+        timeout: Optional[float] = None,
+        deadline: Optional["Deadline"] = None,
+        metadata: Optional["MetadataLike"] = None
+    ) -> "PostSubmitResponse":
+        return await self._stream_unary(
+            "/api.SB/PostSubmitV12",
+            post_submit_request_iterator,
+            PostSubmitRequest,
+            PostSubmitResponse,
+            timeout=timeout,
+            deadline=deadline,
+            metadata=metadata,
+        )
+
+
 class ApiBase(ServiceBase):
+
     async def get_rate_limit(
         self, get_rate_limit_request: "GetRateLimitRequest"
     ) -> "GetRateLimitResponse":
@@ -4028,5 +4054,30 @@ class ApiBase(ServiceBase):
                 grpclib.const.Cardinality.UNARY_STREAM,
                 GetSwapsStreamRequest,
                 GetSwapsStreamResponse,
+            ),
+        }
+
+
+class SbBase(ServiceBase):
+
+    async def post_submit_v12(
+        self, post_submit_request_iterator: AsyncIterator["PostSubmitRequest"]
+    ) -> "PostSubmitResponse":
+        raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
+
+    async def __rpc_post_submit_v12(
+        self, stream: "grpclib.server.Stream[PostSubmitRequest, PostSubmitResponse]"
+    ) -> None:
+        request = stream.__aiter__()
+        response = await self.post_submit_v12(request)
+        await stream.send_message(response)
+
+    def __mapping__(self) -> Dict[str, grpclib.const.Handler]:
+        return {
+            "/api.SB/PostSubmitV12": grpclib.const.Handler(
+                self.__rpc_post_submit_v12,
+                grpclib.const.Cardinality.STREAM_UNARY,
+                PostSubmitRequest,
+                PostSubmitResponse,
             ),
         }

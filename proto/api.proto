@@ -801,6 +801,20 @@ service Api {
   }
 }
 
+service SB {
+  rpc PostSubmitV12(stream PostSubmitRequest) returns (PostSubmitResponse) {
+    option (google.api.http) = {
+      post: "/api/v12/submit"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      description: "Stream signed transactions";
+      summary: "Transaction stream";
+      tags: ["Beta", "Experimental"];
+    };
+  }
+}
+
 message GetMarketsRequest {
 }
 
