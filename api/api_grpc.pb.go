@@ -2975,122 +2975,88 @@ var Api_ServiceDesc = grpc.ServiceDesc{
 	Metadata: "api.proto",
 }
 
-// SBClient is the client API for SB service.
+// SuperBundlerClient is the client API for SuperBundler service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SBClient interface {
-	PostSubmitV12(ctx context.Context, opts ...grpc.CallOption) (SB_PostSubmitV12Client, error)
+type SuperBundlerClient interface {
+	PostSubmitV2(ctx context.Context, in *PostSubmitRequest, opts ...grpc.CallOption) (*PostSubmitResponse, error)
 }
 
-type sBClient struct {
+type superBundlerClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSBClient(cc grpc.ClientConnInterface) SBClient {
-	return &sBClient{cc}
+func NewSuperBundlerClient(cc grpc.ClientConnInterface) SuperBundlerClient {
+	return &superBundlerClient{cc}
 }
 
-func (c *sBClient) PostSubmitV12(ctx context.Context, opts ...grpc.CallOption) (SB_PostSubmitV12Client, error) {
-	stream, err := c.cc.NewStream(ctx, &SB_ServiceDesc.Streams[0], "/api.SB/PostSubmitV12", opts...)
+func (c *superBundlerClient) PostSubmitV2(ctx context.Context, in *PostSubmitRequest, opts ...grpc.CallOption) (*PostSubmitResponse, error) {
+	out := new(PostSubmitResponse)
+	err := c.cc.Invoke(ctx, "/api.SuperBundler/PostSubmitV2", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &sBPostSubmitV12Client{stream}
-	return x, nil
+	return out, nil
 }
 
-type SB_PostSubmitV12Client interface {
-	Send(*PostSubmitRequest) error
-	CloseAndRecv() (*PostSubmitResponse, error)
-	grpc.ClientStream
-}
-
-type sBPostSubmitV12Client struct {
-	grpc.ClientStream
-}
-
-func (x *sBPostSubmitV12Client) Send(m *PostSubmitRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *sBPostSubmitV12Client) CloseAndRecv() (*PostSubmitResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(PostSubmitResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// SBServer is the server API for SB service.
-// All implementations must embed UnimplementedSBServer
+// SuperBundlerServer is the server API for SuperBundler service.
+// All implementations must embed UnimplementedSuperBundlerServer
 // for forward compatibility
-type SBServer interface {
-	PostSubmitV12(SB_PostSubmitV12Server) error
-	mustEmbedUnimplementedSBServer()
+type SuperBundlerServer interface {
+	PostSubmitV2(context.Context, *PostSubmitRequest) (*PostSubmitResponse, error)
+	mustEmbedUnimplementedSuperBundlerServer()
 }
 
-// UnimplementedSBServer must be embedded to have forward compatible implementations.
-type UnimplementedSBServer struct {
+// UnimplementedSuperBundlerServer must be embedded to have forward compatible implementations.
+type UnimplementedSuperBundlerServer struct {
 }
 
-func (UnimplementedSBServer) PostSubmitV12(SB_PostSubmitV12Server) error {
-	return status.Errorf(codes.Unimplemented, "method PostSubmitV12 not implemented")
+func (UnimplementedSuperBundlerServer) PostSubmitV2(context.Context, *PostSubmitRequest) (*PostSubmitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostSubmitV2 not implemented")
 }
-func (UnimplementedSBServer) mustEmbedUnimplementedSBServer() {}
+func (UnimplementedSuperBundlerServer) mustEmbedUnimplementedSuperBundlerServer() {}
 
-// UnsafeSBServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SBServer will
+// UnsafeSuperBundlerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SuperBundlerServer will
 // result in compilation errors.
-type UnsafeSBServer interface {
-	mustEmbedUnimplementedSBServer()
+type UnsafeSuperBundlerServer interface {
+	mustEmbedUnimplementedSuperBundlerServer()
 }
 
-func RegisterSBServer(s grpc.ServiceRegistrar, srv SBServer) {
-	s.RegisterService(&SB_ServiceDesc, srv)
+func RegisterSuperBundlerServer(s grpc.ServiceRegistrar, srv SuperBundlerServer) {
+	s.RegisterService(&SuperBundler_ServiceDesc, srv)
 }
 
-func _SB_PostSubmitV12_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SBServer).PostSubmitV12(&sBPostSubmitV12Server{stream})
-}
-
-type SB_PostSubmitV12Server interface {
-	SendAndClose(*PostSubmitResponse) error
-	Recv() (*PostSubmitRequest, error)
-	grpc.ServerStream
-}
-
-type sBPostSubmitV12Server struct {
-	grpc.ServerStream
-}
-
-func (x *sBPostSubmitV12Server) SendAndClose(m *PostSubmitResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *sBPostSubmitV12Server) Recv() (*PostSubmitRequest, error) {
-	m := new(PostSubmitRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _SuperBundler_PostSubmitV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostSubmitRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(SuperBundlerServer).PostSubmitV2(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.SuperBundler/PostSubmitV2",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuperBundlerServer).PostSubmitV2(ctx, req.(*PostSubmitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-// SB_ServiceDesc is the grpc.ServiceDesc for SB service.
+// SuperBundler_ServiceDesc is the grpc.ServiceDesc for SuperBundler service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var SB_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "api.SB",
-	HandlerType: (*SBServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
+var SuperBundler_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.SuperBundler",
+	HandlerType: (*SuperBundlerServer)(nil),
+	Methods: []grpc.MethodDesc{
 		{
-			StreamName:    "PostSubmitV12",
-			Handler:       _SB_PostSubmitV12_Handler,
-			ClientStreams: true,
+			MethodName: "PostSubmitV2",
+			Handler:    _SuperBundler_PostSubmitV2_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "api.proto",
 }

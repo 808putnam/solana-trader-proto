@@ -2369,46 +2369,36 @@ func local_request_Api_PostRouteTradeSwap_0(ctx context.Context, marshaler runti
 
 }
 
-func request_SB_PostSubmitV12_0(ctx context.Context, marshaler runtime.Marshaler, client SBClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_SuperBundler_PostSubmitV2_0(ctx context.Context, marshaler runtime.Marshaler, client SuperBundlerClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PostSubmitRequest
 	var metadata runtime.ServerMetadata
-	stream, err := client.PostSubmitV12(ctx)
-	if err != nil {
-		grpclog.Infof("Failed to start streaming: %v", err)
-		return nil, metadata, err
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	dec := marshaler.NewDecoder(req.Body)
-	for {
-		var protoReq PostSubmitRequest
-		err = dec.Decode(&protoReq)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			grpclog.Infof("Failed to decode request: %v", err)
-			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-		}
-		if err = stream.Send(&protoReq); err != nil {
-			if err == io.EOF {
-				break
-			}
-			grpclog.Infof("Failed to send request: %v", err)
-			return nil, metadata, err
-		}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	if err := stream.CloseSend(); err != nil {
-		grpclog.Infof("Failed to terminate client stream: %v", err)
-		return nil, metadata, err
-	}
-	header, err := stream.Header()
-	if err != nil {
-		grpclog.Infof("Failed to get header from client: %v", err)
-		return nil, metadata, err
-	}
-	metadata.HeaderMD = header
+	msg, err := client.PostSubmitV2(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
 
-	msg, err := stream.CloseAndRecv()
-	metadata.TrailerMD = stream.Trailer()
+}
+
+func local_request_SuperBundler_PostSubmitV2_0(ctx context.Context, marshaler runtime.Marshaler, server SuperBundlerServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PostSubmitRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.PostSubmitV2(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -3766,17 +3756,34 @@ func RegisterApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, server
 	return nil
 }
 
-// RegisterSBHandlerServer registers the http handlers for service SB to "mux".
-// UnaryRPC     :call SBServer directly.
+// RegisterSuperBundlerHandlerServer registers the http handlers for service SuperBundler to "mux".
+// UnaryRPC     :call SuperBundlerServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSBHandlerFromEndpoint instead.
-func RegisterSBHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SBServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSuperBundlerHandlerFromEndpoint instead.
+func RegisterSuperBundlerHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SuperBundlerServer) error {
 
-	mux.Handle("POST", pattern_SB_PostSubmitV12_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
-		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-		return
+	mux.Handle("POST", pattern_SuperBundler_PostSubmitV2_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.SuperBundler/PostSubmitV2", runtime.WithHTTPPathPattern("/sb/v2/submit"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_SuperBundler_PostSubmitV2_0(ctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_SuperBundler_PostSubmitV2_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
 	})
 
 	return nil
@@ -5227,9 +5234,9 @@ var (
 	forward_Api_PostRouteTradeSwap_0 = runtime.ForwardResponseMessage
 )
 
-// RegisterSBHandlerFromEndpoint is same as RegisterSBHandler but
+// RegisterSuperBundlerHandlerFromEndpoint is same as RegisterSuperBundlerHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterSBHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterSuperBundlerHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -5249,40 +5256,40 @@ func RegisterSBHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, e
 		}()
 	}()
 
-	return RegisterSBHandler(ctx, mux, conn)
+	return RegisterSuperBundlerHandler(ctx, mux, conn)
 }
 
-// RegisterSBHandler registers the http handlers for service SB to "mux".
+// RegisterSuperBundlerHandler registers the http handlers for service SuperBundler to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterSBHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterSBHandlerClient(ctx, mux, NewSBClient(conn))
+func RegisterSuperBundlerHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterSuperBundlerHandlerClient(ctx, mux, NewSuperBundlerClient(conn))
 }
 
-// RegisterSBHandlerClient registers the http handlers for service SB
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "SBClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "SBClient"
+// RegisterSuperBundlerHandlerClient registers the http handlers for service SuperBundler
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "SuperBundlerClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "SuperBundlerClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "SBClient" to call the correct interceptors.
-func RegisterSBHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SBClient) error {
+// "SuperBundlerClient" to call the correct interceptors.
+func RegisterSuperBundlerHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SuperBundlerClient) error {
 
-	mux.Handle("POST", pattern_SB_PostSubmitV12_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SuperBundler_PostSubmitV2_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.SB/PostSubmitV12", runtime.WithHTTPPathPattern("/api/v12/submit"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.SuperBundler/PostSubmitV2", runtime.WithHTTPPathPattern("/sb/v2/submit"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_SB_PostSubmitV12_0(ctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SuperBundler_PostSubmitV2_0(ctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_SB_PostSubmitV12_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SuperBundler_PostSubmitV2_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -5290,9 +5297,9 @@ func RegisterSBHandlerClient(ctx context.Context, mux *runtime.ServeMux, client 
 }
 
 var (
-	pattern_SB_PostSubmitV12_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v12", "submit"}, ""))
+	pattern_SuperBundler_PostSubmitV2_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"sb", "v2", "submit"}, ""))
 )
 
 var (
-	forward_SB_PostSubmitV12_0 = runtime.ForwardResponseMessage
+	forward_SuperBundler_PostSubmitV2_0 = runtime.ForwardResponseMessage
 )

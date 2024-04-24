@@ -801,15 +801,15 @@ service Api {
   }
 }
 
-service SB {
-  rpc PostSubmitV12(stream PostSubmitRequest) returns (PostSubmitResponse) {
+service SuperBundler {
+  rpc PostSubmitV2(PostSubmitRequest) returns (PostSubmitResponse) {
     option (google.api.http) = {
-      post: "/api/v12/submit"
+      post: "/sb/v2/submit"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      description: "Stream signed transactions";
-      summary: "Transaction stream";
+      description: "Submits a signed transaction";
+      summary: "Transaction submit";
       tags: ["Beta", "Experimental"];
     };
   }

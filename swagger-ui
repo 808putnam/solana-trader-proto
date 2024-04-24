@@ -19,7 +19,7 @@
       }
     },
     {
-      "name": "SB"
+      "name": "SuperBundler"
     }
   ],
   "consumes": [
@@ -997,42 +997,6 @@
         "tags": [
           "Trade",
           "Orderbook"
-        ]
-      }
-    },
-    "/api/v12/submit": {
-      "post": {
-        "summary": "Transaction stream",
-        "description": "Stream signed transactions",
-        "operationId": "SB_PostSubmitV12",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPostSubmitResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "description": " (streaming inputs)",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiPostSubmitRequest"
-            }
-          }
-        ],
-        "tags": [
-          "Beta",
-          "Experimental"
         ]
       }
     },
@@ -2054,6 +2018,41 @@
         ],
         "tags": [
           "Solana RPC"
+        ]
+      }
+    },
+    "/sb/v2/submit": {
+      "post": {
+        "summary": "Transaction submit",
+        "description": "Submits a signed transaction",
+        "operationId": "SuperBundler_PostSubmitV2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPostSubmitResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPostSubmitRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Beta",
+          "Experimental"
         ]
       }
     }
